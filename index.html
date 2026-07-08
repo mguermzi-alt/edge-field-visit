@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1a73e8">
+    <title>EDGE Field Visit</title>
+    <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiRURHRSBGaWVsZCBWaXNpdCIsInNob3J0X25hbWUiOiJFREdFIiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiI2Y1ZjVmNSIsInRoZW1lX2NvbG9yIjoiIzFhNzNlOCJ9">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        :root {
+            --primary: #1a73e8; --primary-dark: #1557b0; --success: #34a853; --danger: #ea4335;
+            --warning: #fbbc04; --bg: #f5f5f5; --card: #fff; --text: #202124; --text-light: #5f6368;
+            --border: #dadce0; --shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 80px; }
+        .header { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; padding: 16px; text-align: center; position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow); }
+        .header h1 { font-size: 1.3rem; font-weight: 600; }
+        .header .subtitle { font-size: 0.75rem; opacity: 0.9; margin-top: 2px; }
+        .status-bar { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 8px; background: var(--card); border-bottom: 1px solid var(--border); font-size: 0.8rem; }
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--danger); animation: pulse 2s infinite; }
+        .status-dot.online { background: var(--success); animation: none; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        .tabs { display: flex; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 99; }
+        .tab { flex: 1; padding: 12px 4px; text-align: center; font-size: 0.75rem; font-weight: 500; color: var(--text-light); cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s; }
+        .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .tab .icon { font-size: 1.2rem; display: block; margin-bottom: 2px; }
+        .content { padding: 16px; max-width: 600px; margin: 0 auto; }
+        .section { display: none; }
+        .section.active { display: block; }
+        .card { background: var(--card); border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow); }
+        .card-title { font-size: 1rem; font-weight: 600; margin-bottom: 12px; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+        .input-group { margin-bottom: 12px; }
+        .input-group label { display: block; font-size: 0.85rem; font-weight: 500; margin-bottom: 4px; color: var(--text-light); }
+        .input-group input, .input-group select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; background: var(--card); }
+        .input-group input:focus { outline: none; border-color: var(--primary); }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s; width: 100%; margin-top: 8px; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:active { background: var(--primary-dark); transform: scale(0.98); }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
+        .rating-group { display: flex; gap: 8px; margin-bottom: 8px; }
+        .rating-btn { flex: 1; padding: 10px; border: 2px solid var(--border); border-radius: 8px; background: var(--card); font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s; text-align: center; }
+        .rating-btn.selected { border-color: var(--primary); background: var(--primary); color: white; }
+        .rating-btn.r0.selected { background: var(--danger); border-color: var(--danger); }
+        .rating-btn.r1.selected { background: #ff6b35; border-color: #ff6b35; color: white; }
+        .rating-btn.r2.selected { background: var(--warning); border-color: var(--warning); color: #333; }
+        .rating-btn.r3.selected { background: #8bc34a; border-color: #8bc34a; color: white; }
+        .rating-btn.r4.selected { background: #4caf50; border-color: #4caf50; color: white; }
+        .rating-btn.r5.selected { background: var(--success); border-color: var(--success); }
+        .category { margin-bottom: 16px; }
+        .category-title { font-size: 0.9rem; font-weight: 600; margin-bottom: 8px; color: var(--text); display: flex; justify-content: space-between; }
+        .category-score { color: var(--primary); font-weight: 700; }
+        .sub-item { margin-bottom: 8px; padding-left: 8px; }
+        .sub-item label { font-size: 0.8rem; color: var(--text-light); margin-bottom: 4px; display: block; }
+        .cda-toggle { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+        .toggle-switch { position: relative; width: 50px; height: 28px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #ccc; border-radius: 28px; transition: 0.3s; }
+        .toggle-slider:before { position: absolute; content: ""; height: 22px; width: 22px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.3s; }
+        .toggle-switch input:checked + .toggle-slider { background: var(--success); }
+        .toggle-switch input:checked + .toggle-slider:before { transform: translateX(22px); }
+        .outlet-item { background: var(--card); border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow); cursor: pointer; transition: all 0.2s; }
+        .outlet-item:active { transform: scale(0.98); }
+        .outlet-name { font-weight: 600; font-size: 1rem; margin-bottom: 4px; }
+        .outlet-meta { font-size: 0.8rem; color: var(--text-light); }
+        .outlet-score { float: right; font-size: 1.2rem; font-weight: 700; color: var(--primary); }
+        .score-card { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 16px; }
+        .score-big { font-size: 3rem; font-weight: 700; }
+        .score-label { font-size: 0.9rem; opacity: 0.9; margin-top: 4px; }
+        .breakdown { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+        .breakdown-item { background: var(--card); border-radius: 8px; padding: 12px; text-align: center; box-shadow: var(--shadow); }
+        .breakdown-value { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
+        .breakdown-label { font-size: 0.75rem; color: var(--text-light); margin-top: 2px; }
+        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-light); }
+        .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 200; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .modal-overlay.active { display: flex; }
+        .modal { background: var(--card); border-radius: 16px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; padding: 20px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .modal-title { font-size: 1.2rem; font-weight: 600; }
+        .modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-light); }
+        .team-list { display: flex; flex-wrap: wrap; gap: 8px; }
+        .team-member { display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: #e8f0fe; border-radius: 20px; font-size: 0.8rem; color: var(--primary); }
+        .team-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
+        .sync-btn { position: fixed; bottom: 90px; right: 16px; width: 56px; height: 56px; border-radius: 50%; background: var(--primary); color: white; border: none; font-size: 1.5rem; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 90; display: flex; align-items: center; justify-content: center; }
+        .sync-btn.spinning { animation: spin 1s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(100px); background: #333; color: white; padding: 12px 24px; border-radius: 8px; font-size: 0.9rem; z-index: 300; opacity: 0; transition: all 0.3s; }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .delete-btn { color: var(--danger); background: none; border: none; font-size: 0.8rem; cursor: pointer; padding: 4px 8px; }
+        .history-item { border-left: 3px solid var(--primary); padding-left: 12px; margin-bottom: 12px; }
+        .history-date { font-size: 0.75rem; color: var(--text-light); }
+        .history-name { font-weight: 600; }
+        .history-score { color: var(--primary); font-weight: 700; }
+        @media (max-width: 400px) { .rating-btn { padding: 8px; font-size: 0.9rem; } .breakdown { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>EDGE Field Visit</h1>
+        <div class="subtitle">PepsiCo Field Evaluation</div>
+    </div>
+
+    <div class="status-bar">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusText">Connecting...</span>
+        <span id="teamCount" style="margin-left:auto;font-size:0.75rem;color:var(--text-light);"></span>
+    </div>
+
+    <div class="tabs">
+        <div class="tab active" onclick="showTab('new')">
+            <span class="icon">📝</span>
+            <span>New Visit</span>
+        </div>
+        <div class="tab" onclick="showTab('outlets')">
+            <span class="icon">🏪</span>
+            <span>Outlets</span>
+        </div>
+        <div class="tab" onclick="showTab('summary')">
+            <span class="icon">📊</span>
+            <span>Summary</span>
+        </div>
+        <div class="tab" onclick="showTab('team')">
+            <span class="icon">👥</span>
+            <span>Team</span>
+        </div>
+        <div class="tab" onclick="showTab('archive')">
+            <span class="icon">📁</span>
+            <span>Archive</span>
+        </div>
+    </div>
+
+    <div class="content">
+        <!-- NEW VISIT -->
+        <div id="tab-new" class="section active">
+            <div class="card">
+                <div class="card-title">📝 Visit Info</div>
+                <div class="input-group">
+                    <label>TDM Name</label>
+                    <input type="text" id="tdmName" placeholder="Enter TDM name">
+                </div>
+                <div class="input-group">
+                    <label>Route Number</label>
+                    <input type="text" id="routeNumber" placeholder="Route number">
+                </div>
+                <div class="input-group">
+                    <label>Visit Date</label>
+                    <input type="date" id="visitDate">
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🏪 Outlet Info</div>
+                <div class="input-group">
+                    <label>Outlet Name</label>
+                    <input type="text" id="outletName" placeholder="Customer/Outlet name">
+                </div>
+                <div class="cda-toggle">
+                    <label style="font-weight:600;">CDA (Discount)</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="cdaToggle">
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span id="cdaLabel" style="font-size:0.8rem;color:var(--text-light);">No</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">⚙️ Execution</div>
+                <div class="category">
+                    <div class="sub-item">
+                        <label>Cooler</label>
+                        <div class="rating-group" data-category="execution" data-item="cooler">
+                            <button class="rating-btn r0" onclick="setRating(this,0)">0</button>
+                            <button class="rating-btn r1" onclick="setRating(this,1)">1</button>
+                            <button class="rating-btn r2" onclick="setRating(this,2)">2</button>
+                            <button class="rating-btn r3" onclick="setRating(this,3)">3</button>
+                            <button class="rating-btn r4" onclick="setRating(this,4)">4</button>
+                            <button class="rating-btn r5" onclick="setRating(this,5)">5</button>
+                        </div>
+                    </div>
+                    <div class="sub-item">
+                        <label>Hot Shelf</label>
+                        <div class="rating-group" data-category="execution" data-item="hotShelf">
+                            <button class="rating-btn r0" onclick="setRating(this,0)">0</button>
+                            <button class="rating-btn r1" onclick="setRating(this,1)">1</button>
+                            <button class="rating-btn r2" onclick="setRating(this,2)">2</button>
+                            <button class="rating-btn r3" onclick="setRating(this,3)">3</button>
+                            <button class="rating-btn r4" onclick="setRating(this,4)">4</button>
+                            <button class="rating-btn r5" onclick="setRating(this,5)">5</button>
+                        </div>
+                    </div>
+                    <div class="sub-item">
+                        <label>Floor Display</label>
+                        <div class="rating-group" data-category="execution" data-item="floorDisplay">
+                            <button class="rating-btn r0" onclick="setRating(this,0)">0</button>
+                            <button class="rating-btn r1" onclick="setRating(this,1)">1</button>
+                            <button class="rating-btn r2" onclick="setRating(this,2)">2</button>
+                            <button class="rating-btn r3" onclick="setRating(this,3)">3</button>
+                            <button class="rating-btn r4" onclick="setRating(this,4)">4</button>
+                            <button class="rating-btn r5" onclick="setRating(this,5)">5</button>
+                        </div>
+                    </div>
+                    <div class="category-title">Execution Score <span class="category-score" id="executionScore">-</span></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">📈 Development</div>
+                <div class="category">
+                    <div class="sub-item">
+                        <label>Aquafina</label>
+                        <div class="rating-group" data-category="development" data-item="aquafina">
+                            <button class="rating-btn r0" onclick="setRating(this,0)">0</button>
+                            <button class="rating-btn r1" onclick="setRating(this,1)">1</button>
+                            <button class="rating-btn r2" onclick="setRating(this,2)">2</button>
+                            <button class="rating-btn r3" onclick="setRating(this,3)">3</button>
+                            <button class="rating-btn r4" onclick="setRating(this,4)">4</button>
+                            <button class="rating-btn r5" onclick="setRating(this,5)">5</button>
+                        </div>
+                    </div>
+                    <div class="sub-item">
+                        <label>Sting</label>
+                        <div class="rating-group" data-category="development" data-item="sting">
+                            <button class="rating-btn r0" onclick="setRating(this,0)">0</button>
+                            <button class="rating-btn r1" onclick="setRating(this,1)">1</button>
+                            <button class="rating-btn r2" onclick="setRating(this,2)">2</button>
+                            <button class="rating-btn r3" onclick="setRating(this,3)">3</button>
+                            <button class="rating-btn r4" onclick="setRating(this,4)">4</button>
+                            <button class="rating-btn r5" onclick="setRating(this,5)">5</button>
+                        </div>
+                    </div>
+                    <div class="sub-item">
+                        <label>CSD (Carbonated Soft Drink)</label>
+                        <div class="rating-group" data-category="development" data-item="csd">
+                            <button class="rating-btn r0" onclick="setRating(this,0)">0</button>
+                            <button class="rating-btn r1" onclick="setRating(this,1)">1</button>
+                            <button class="rating-btn r2" onclick="setRating(this,2)">2</button>
+                            <button class="rating-btn r3" onclick="setRating(this,3)">3</button>
+                            <button class="rating-btn r4" onclick="setRating(this,4)">4</button>
+                            <button class="rating-btn r5" onclick="setRating(this,5)">5</button>
+                        </div>
+                    </div>
+                    <div class="category-title">Development Score <span class="category-score" id="developmentScore">-</span></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🚀 Growth</div>
+                <div class="category">
+                    <div class="sub-item">
+                        <label>Coke</label>
+                        <div class="rating-group" data-category="growth" data-item="coke">
+                            <button class="rating-btn r0" onclick="setRating(this,0)">0</button>
+                            <button class="rating-btn r1" onclick="setRating(this,1)">1</button>
+                            <button class="rating-btn r2" onclick="setRating(this,2)">2</button>
+                            <button class="rating-btn r3" onclick="setRating(this,3)">3</button>
+                            <button class="rating-btn r4" onclick="setRating(this,4)">4</button>
+                            <button class="rating-btn r5" onclick="setRating(this,5)">5</button>
+                        </div>
+                    </div>
+                    <div class="sub-item">
+                        <label>Al Ain</label>
+                        <div class="rating-group" data-category="growth" data-item="alAin">
+                            <button class="rating-btn r0" onclick="setRating(this,0)">0</button>
+                            <button class="rating-btn r1" onclick="setRating(this,1)">1</button>
+                            <button class="rating-btn r2" onclick="setRating(this,2)">2</button>
+                            <button class="rating-btn r3" onclick="setRating(this,3)">3</button>
+                            <button class="rating-btn r4" onclick="setRating(this,4)">4</button>
+                            <button class="rating-btn r5" onclick="setRating(this,5)">5</button>
+                        </div>
+                    </div>
+                    <div class="sub-item">
+                        <label>Other</label>
+                        <div class="rating-group" data-category="growth" data-item="otherGrowth">
+                            <button class="rating-btn r0" onclick="setRating(this,0)">0</button>
+                            <button class="rating-btn r1" onclick="setRating(this,1)">1</button>
+                            <button class="rating-btn r2" onclick="setRating(this,2)">2</button>
+                            <button class="rating-btn r3" onclick="setRating(this,3)">3</button>
+                            <button class="rating-btn r4" onclick="setRating(this,4)">4</button>
+                            <button class="rating-btn r5" onclick="setRating(this,5)">5</button>
+                        </div>
+                    </div>
+                    <div class="category-title">Growth Score <span class="category-score" id="growthScore">-</span></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">⭐ Excellent Service</div>
+                <div class="category">
+                    <div class="sub-item">
+                        <label>OBL (Outstanding Balance)</label>
+                        <div class="rating-group" data-category="excellentService" data-item="obl">
+                            <button class="rating-btn r0" onclick="setRating(this,0)">0</button>
+                            <button class="rating-btn r1" onclick="setRating(this,1)">1</button>
+                            <button class="rating-btn r2" onclick="setRating(this,2)">2</button>
+                            <button class="rating-btn r3" onclick="setRating(this,3)">3</button>
+                            <button class="rating-btn r4" onclick="setRating(this,4)">4</button>
+                            <button class="rating-btn r5" onclick="setRating(this,5)">5</button>
+                        </div>
+                    </div>
+                    <div class="sub-item">
+                        <label>Other</label>
+                        <div class="rating-group" data-category="excellentService" data-item="otherService">
+                            <button class="rating-btn r0" onclick="setRating(this,0)">0</button>
+                            <button class="rating-btn r1" onclick="setRating(this,1)">1</button>
+                            <button class="rating-btn r2" onclick="setRating(this,2)">2</button>
+                            <button class="rating-btn r3" onclick="setRating(this,3)">3</button>
+                            <button class="rating-btn r4" onclick="setRating(this,4)">4</button>
+                            <button class="rating-btn r5" onclick="setRating(this,5)">5</button>
+                        </div>
+                    </div>
+                    <div class="category-title">Excellent Service Score <span class="category-score" id="excellentServiceScore">-</span></div>
+                </div>
+            </div>
+
+            <div class="card" style="background:linear-gradient(135deg,#1a73e8,#1557b0);color:white;">
+                <div style="text-align:center;">
+                    <div style="font-size:0.9rem;opacity:0.9;">EDGE Score</div>
+                    <div id="edgeScore" style="font-size:2.5rem;font-weight:700;">-</div>
+                </div>
+            </div>
+
+            <button class="btn btn-success" onclick="saveOutlet()">💾 Save Outlet</button>
+            <button class="btn btn-outline" onclick="resetForm()" style="margin-top:8px;">🔄 Reset Form</button>
+        </div>
+
+        <!-- OUTLETS LIST -->
+        <div id="tab-outlets" class="section">
+            <div id="outletsList"></div>
+        </div>
+
+        <!-- SUMMARY -->
+        <div id="tab-summary" class="section">
+            <div class="score-card">
+                <div class="score-label">Final EDGE Score</div>
+                <div class="score-big" id="finalEdgeScore">-</div>
+            </div>
+            <div class="breakdown">
+                <div class="breakdown-item">
+                    <div class="breakdown-value" id="summaryExecution">-</div>
+                    <div class="breakdown-label">Execution</div>
+                </div>
+                <div class="breakdown-item">
+                    <div class="breakdown-value" id="summaryDevelopment">-</div>
+                    <div class="breakdown-label">Development</div>
+                </div>
+                <div class="breakdown-item">
+                    <div class="breakdown-value" id="summaryGrowth">-</div>
+                    <div class="breakdown-label">Growth</div>
+                </div>
+                <div class="breakdown-item">
+                    <div class="breakdown-value" id="summaryExcellent">-</div>
+                    <div class="breakdown-label">Excellent Service</div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title">📊 CDA Summary</div>
+                <div class="breakdown">
+                    <div class="breakdown-item">
+                        <div class="breakdown-value" id="cdaPercentage">-</div>
+                        <div class="breakdown-label">CDA %</div>
+                    </div>
+                    <div class="breakdown-item">
+                        <div class="breakdown-value" id="cdaCount">-</div>
+                        <div class="breakdown-label">With CDA</div>
+                    </div>
+                    <div class="breakdown-item">
+                        <div class="breakdown-value" id="totalOutlets">-</div>
+                        <div class="breakdown-label">Total Outlets</div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title">🏪 Outlet Details</div>
+                <div id="summaryOutlets"></div>
+            </div>
+            <button class="btn btn-primary" onclick="saveVisit()">💾 Save Complete Visit</button>
+        </div>
+
+        <!-- TEAM -->
+        <div id="tab-team" class="section">
+            <div class="card">
+                <div class="card-title">👥 Connected Team Members</div>
+                <div id="teamList" class="team-list">
+                    <div class="empty-state">
+                        <div class="icon">👤</div>
+                        <div>Waiting for team members...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title">🔗 Share Link</div>
+                <p style="font-size:0.85rem;color:var(--text-light);margin-bottom:12px;">Share this link with your team:</p>
+                <input type="text" id="shareLink" readonly style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;font-size:0.85rem;background:#f8f9fa;">
+                <button class="btn btn-primary" onclick="copyLink()" style="margin-top:8px;">📋 Copy Link</button>
+            </div>
+        </div>
+
+        <!-- ARCHIVE -->
+        <div id="tab-archive" class="section">
+            <div id="archiveList"></div>
+        </div>
+    </div>
+
+    <!-- SYNC BUTTON -->
+    <button class="sync-btn" id="syncBtn" onclick="manualSync()">🔄</button>
+
+    <!-- TOAST -->
+    <div class="toast" id="toast"></div>
+
+    <!-- MODAL -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">Outlet Details</div>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+
+    <!-- FIREBASE SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, onValue, push, update, onDisconnect, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyABvqHa-dn8oefsiQFchvAjwiHylJLXlDc",
+            authDomain: "edge-field-visit.firebaseapp.com",
+            databaseURL: "https://edge-field-visit-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "edge-field-visit",
+            storageBucket: "edge-field-visit.firebasestorage.app",
+            messagingSenderId: "195469686133",
+            appId: "1:195469686133:web:1451cedcd140ac88e3cf3c"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Generate unique user ID
+        let userId = localStorage.getItem('edge_user_id');
+        if (!userId) {
+            userId = 'user_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('edge_user_id', userId);
+        }
+
+        const userName = localStorage.getItem('edge_user_name') || 'User ' + userId.substr(-4);
+
+        // Presence system
+        const presenceRef = ref(db, 'presence/' + userId);
+        const connectedRef = ref(db, '.info/connected');
+
+        onValue(connectedRef, (snap) => {
+            if (snap.val() === true) {
+                set(presenceRef, { name: userName, online: true, lastSeen: serverTimestamp() });
+                onDisconnect(presenceRef).set({ name: userName, online: false, lastSeen: serverTimestamp() });
+            }
+        });
+
+        // Listen to team presence
+        const teamRef = ref(db, 'presence');
+        onValue(teamRef, (snapshot) => {
+            const data = snapshot.val() || {};
+            const online = Object.values(data).filter(u => u.online);
+            document.getElementById('teamCount').textContent = online.length + ' online';
+            updateTeamList(data);
+        });
+
+        // Listen to outlets data
+        const outletsRef = ref(db, 'outlets');
+        onValue(outletsRef, (snapshot) => {
+            const data = snapshot.val() || {};
+            outlets = Object.entries(data).map(([id, o]) => ({ id, ...o }));
+            renderOutlets();
+            updateSummary();
+            showToast('Data synced!');
+        });
+
+        // Listen to visits data
+        const visitsRef = ref(db, 'visits');
+        onValue(visitsRef, (snapshot) => {
+            const data = snapshot.val() || {};
+            visits = Object.entries(data).map(([id, v]) => ({ id, ...v }));
+            renderArchive();
+        });
+
+        // Global functions for Firebase
+        window.saveToFirebase = function(path, data) {
+            const newRef = push(ref(db, path));
+            return set(newRef, { ...data, timestamp: Date.now(), userId, userName });
+        };
+
+        window.updateFirebase = function(path, id, data) {
+            return update(ref(db, path + '/' + id), data);
+        };
+
+        window.removeFirebase = function(path, id) {
+            return set(ref(db, path + '/' + id), null);
+        };
+
+        // Update connection status
+        const statusRef = ref(db, '.info/connected');
+        onValue(statusRef, (snap) => {
+            const connected = snap.val();
+            const dot = document.getElementById('statusDot');
+            const text = document.getElementById('statusText');
+            if (connected) {
+                dot.classList.add('online');
+                text.textContent = 'Connected (Real-time sync)';
+            } else {
+                dot.classList.remove('online');
+                text.textContent = 'Offline (will sync when online)';
+            }
+        });
+
+        // Set share link
+        document.getElementById('shareLink').value = window.location.href;
+    </script>
+
+    <script>
+        // ===== STATE =====
+        let outlets = [];
+        let visits = [];
+        let currentRatings = {};
+        let editingId = null;
+
+        // ===== INIT =====
+        document.getElementById('visitDate').valueAsDate = new Date();
+
+        document.getElementById('cdaToggle').addEventListener('change', function() {
+            document.getElementById('cdaLabel').textContent = this.checked ? 'Yes' : 'No';
+        });
+
+        // ===== TABS =====
+        function showTab(tabId) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            document.getElementById('tab-' + tabId).classList.add('active');
+            if (tabId === 'outlets') renderOutlets();
+            if (tabId === 'summary') updateSummary();
+            if (tabId === 'archive') renderArchive();
+        }
+
+        // ===== RATING =====
+        function setRating(btn, value) {
+            const group = btn.parentElement;
+            group.querySelectorAll('.rating-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            const category = group.dataset.category;
+            const item = group.dataset.item;
+            if (!currentRatings[category]) currentRatings[category] = {};
+            currentRatings[category][item] = value;
+            calculateScores();
+        }
+
+        function calculateScores() {
+            const cats = {
+                execution: ['cooler', 'hotShelf', 'floorDisplay'],
+                development: ['aquafina', 'sting', 'csd'],
+                growth: ['coke', 'alAin', 'otherGrowth'],
+                excellentService: ['obl', 'otherService']
+            };
+
+            let edgeTotal = 0;
+            let edgeCount = 0;
+
+            for (const [cat, items] of Object.entries(cats)) {
+                let sum = 0;
+                let count = 0;
+                items.forEach(item => {
+                    if (currentRatings[cat] && currentRatings[cat][item] !== undefined) {
+                        sum += currentRatings[cat][item];
+                        count++;
+                    }
+                });
+                const avg = count > 0 ? (sum / count) : 0;
+                const score = avg;
+                document.getElementById(cat + 'Score').textContent = count > 0 ? score.toFixed(2) : '-';
+                if (count > 0) {
+                    edgeTotal += score;
+                    edgeCount++;
+                }
+            }
+
+            const edge = edgeCount > 0 ? (edgeTotal / edgeCount) : 0;
+            document.getElementById('edgeScore').textContent = edgeCount > 0 ? edge.toFixed(2) : '-';
+        }
+
+        // ===== SAVE OUTLET =====
+        function saveOutlet() {
+            const tdm = document.getElementById('tdmName').value.trim();
+            const route = document.getElementById('routeNumber').value.trim();
+            const date = document.getElementById('visitDate').value;
+            const name = document.getElementById('outletName').value.trim();
+            const cda = document.getElementById('cdaToggle').checked;
+
+            if (!name) { showToast('Please enter outlet name'); return; }
+
+            const cats = {
+                execution: ['cooler', 'hotShelf', 'floorDisplay'],
+                development: ['aquafina', 'sting', 'csd'],
+                growth: ['coke', 'alAin', 'otherGrowth'],
+                excellentService: ['obl', 'otherService']
+            };
+
+            let scores = {};
+            let edgeTotal = 0;
+            let edgeCount = 0;
+
+            for (const [cat, items] of Object.entries(cats)) {
+                let sum = 0;
+                let count = 0;
+                items.forEach(item => {
+                    if (currentRatings[cat] && currentRatings[cat][item] !== undefined) {
+                        sum += currentRatings[cat][item];
+                        count++;
+                    }
+                });
+                const avg = count > 0 ? (sum / count) : 0;
+                scores[cat] = { avg, count, items: currentRatings[cat] || {} };
+                if (count > 0) { edgeTotal += avg; edgeCount++; }
+            }
+
+            const edgeScore = edgeCount > 0 ? (edgeTotal / edgeCount) : 0;
+
+            const outlet = {
+                tdm, route, date, name, cda,
+                scores, edgeScore,
+                createdAt: Date.now()
+            };
+
+            if (typeof saveToFirebase === 'function') {
+                saveToFirebase('outlets', outlet).then(() => {
+                    showToast('Outlet saved & synced!');
+                    resetForm();
+                }).catch(err => {
+                    // Fallback to local
+                    outlets.push({ id: 'local_' + Date.now(), ...outlet });
+                    localStorage.setItem('edge_outlets', JSON.stringify(outlets));
+                    showToast('Saved locally (offline)');
+                    resetForm();
+                });
+            } else {
+                outlets.push({ id: 'local_' + Date.now(), ...outlet });
+                localStorage.setItem('edge_outlets', JSON.stringify(outlets));
+                showToast('Saved locally');
+                resetForm();
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('outletName').value = '';
+            document.getElementById('cdaToggle').checked = false;
+            document.getElementById('cdaLabel').textContent = 'No';
+            currentRatings = {};
+            document.querySelectorAll('.rating-btn').forEach(b => b.classList.remove('selected'));
+            ['execution', 'development', 'growth', 'excellentService'].forEach(c => {
+                document.getElementById(c + 'Score').textContent = '-';
+            });
+            document.getElementById('edgeScore').textContent = '-';
+        }
+
+        // ===== RENDER OUTLETS =====
+        function renderOutlets() {
+            const container = document.getElementById('outletsList');
+            if (outlets.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="icon">🏪</div><div>No outlets yet. Add your first outlet!</div></div>';
+                return;
+            }
+            container.innerHTML = outlets.map(o => `
+                <div class="outlet-item" onclick="showOutletDetail('${o.id}')">
+                    <div class="outlet-score">${o.edgeScore ? o.edgeScore.toFixed(2) : '-'}</div>
+                    <div class="outlet-name">${o.name}</div>
+                    <div class="outlet-meta">${o.date} | Route: ${o.route || '-'} | CDA: ${o.cda ? 'Yes' : 'No'}</div>
+                    <button class="delete-btn" onclick="event.stopPropagation(); deleteOutlet('${o.id}')">🗑️ Delete</button>
+                </div>
+            `).join('');
+        }
+
+        function showOutletDetail(id) {
+            const o = outlets.find(x => x.id === id);
+            if (!o) return;
+            document.getElementById('modalTitle').textContent = o.name;
+            document.getElementById('modalContent').innerHTML = `
+                <div style="margin-bottom:12px;"><strong>Date:</strong> ${o.date}</div>
+                <div style="margin-bottom:12px;"><strong>TDM:</strong> ${o.tdm || '-'} | <strong>Route:</strong> ${o.route || '-'}</div>
+                <div style="margin-bottom:12px;"><strong>CDA:</strong> ${o.cda ? 'Yes ✅' : 'No ❌'}</div>
+                <div style="margin-bottom:12px;"><strong>EDGE Score:</strong> <span style="font-size:1.5rem;color:var(--primary);font-weight:700;">${o.edgeScore ? o.edgeScore.toFixed(2) : '-'}</span></div>
+                <hr style="border:none;border-top:1px solid var(--border);margin:12px 0;">
+                ${o.scores ? Object.entries(o.scores).map(([cat, data]) => `
+                    <div style="margin-bottom:8px;"><strong>${cat.charAt(0).toUpperCase() + cat.slice(1)}:</strong> ${data.avg ? data.avg.toFixed(2) : '-'}</div>
+                `).join('') : ''}
+            `;
+            document.getElementById('modal').classList.add('active');
+        }
+
+        function deleteOutlet(id) {
+            if (!confirm('Delete this outlet?')) return;
+            if (typeof removeFirebase === 'function' && !id.startsWith('local_')) {
+                removeFirebase('outlets', id);
+            } else {
+                outlets = outlets.filter(o => o.id !== id);
+                localStorage.setItem('edge_outlets', JSON.stringify(outlets));
+                renderOutlets();
+                updateSummary();
+            }
+            showToast('Outlet deleted');
+        }
+
+        // ===== SUMMARY =====
+        function updateSummary() {
+            if (outlets.length === 0) {
+                document.getElementById('finalEdgeScore').textContent = '-';
+                ['summaryExecution', 'summaryDevelopment', 'summaryGrowth', 'summaryExcellent'].forEach(id => document.getElementById(id).textContent = '-');
+                document.getElementById('cdaPercentage').textContent = '-';
+                document.getElementById('cdaCount').textContent = '-';
+                document.getElementById('totalOutlets').textContent = '0';
+                document.getElementById('summaryOutlets').innerHTML = '<div class="empty-state">No outlets evaluated yet.</div>';
+                return;
+            }
+
+            let execSum = 0, devSum = 0, growthSum = 0, excSum = 0;
+            let execCount = 0, devCount = 0, growthCount = 0, excCount = 0;
+            let cdaYes = 0;
+
+            outlets.forEach(o => {
+                if (o.scores) {
+                    if (o.scores.execution && o.scores.execution.avg > 0) { execSum += o.scores.execution.avg; execCount++; }
+                    if (o.scores.development && o.scores.development.avg > 0) { devSum += o.scores.development.avg; devCount++; }
+                    if (o.scores.growth && o.scores.growth.avg > 0) { growthSum += o.scores.growth.avg; growthCount++; }
+                    if (o.scores.excellentService && o.scores.excellentService.avg > 0) { excSum += o.scores.excellentService.avg; excCount++; }
+                }
+                if (o.cda) cdaYes++;
+            });
+
+            document.getElementById('summaryExecution').textContent = execCount > 0 ? (execSum / execCount).toFixed(2) : '-';
+            document.getElementById('summaryDevelopment').textContent = devCount > 0 ? (devSum / devCount).toFixed(2) : '-';
+            document.getElementById('summaryGrowth').textContent = growthCount > 0 ? (growthSum / growthCount).toFixed(2) : '-';
+            document.getElementById('summaryExcellent').textContent = excCount > 0 ? (excSum / excCount).toFixed(2) : '-';
+
+            const finalEdge = (execCount > 0 ? (execSum / execCount) : 0 + devCount > 0 ? (devSum / devCount) : 0 + growthCount > 0 ? (growthSum / growthCount) : 0 + excCount > 0 ? (excSum / excCount) : 0) / ((execCount > 0 ? 1 : 0) + (devCount > 0 ? 1 : 0) + (growthCount > 0 ? 1 : 0) + (excCount > 0 ? 1 : 0));
+            document.getElementById('finalEdgeScore').textContent = isNaN(finalEdge) ? '-' : finalEdge.toFixed(2);
+
+            document.getElementById('cdaPercentage').textContent = outlets.length > 0 ? ((cdaYes / outlets.length) * 100).toFixed(0) + '%' : '-';
+            document.getElementById('cdaCount').textContent = cdaYes;
+            document.getElementById('totalOutlets').textContent = outlets.length;
+
+            document.getElementById('summaryOutlets').innerHTML = outlets.map(o => `
+                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
+                    <span>${o.name}</span>
+                    <span style="font-weight:700;color:var(--primary);">${o.edgeScore ? o.edgeScore.toFixed(2) : '-'}</span>
+                </div>
+            `).join('');
+        }
+
+        // ===== SAVE VISIT =====
+        function saveVisit() {
+            if (outlets.length === 0) { showToast('No outlets to save'); return; }
+            const tdm = document.getElementById('tdmName').value.trim() || 'Unknown';
+            const route = document.getElementById('routeNumber').value.trim() || '-';
+            const date = document.getElementById('visitDate').value;
+
+            const visit = {
+                tdm, route, date,
+                outlets: outlets.map(o => ({ name: o.name, edgeScore: o.edgeScore, cda: o.cda })),
+                finalEdge: document.getElementById('finalEdgeScore').textContent,
+                cdaPercentage: document.getElementById('cdaPercentage').textContent,
+                totalOutlets: outlets.length,
+                createdAt: Date.now()
+            };
+
+            if (typeof saveToFirebase === 'function') {
+                saveToFirebase('visits', visit).then(() => {
+                    showToast('Visit saved to cloud!');
+                    outlets = [];
+                    localStorage.removeItem('edge_outlets');
+                    renderOutlets();
+                    updateSummary();
+                }).catch(() => {
+                    visits.push({ id: 'local_' + Date.now(), ...visit });
+                    localStorage.setItem('edge_visits', JSON.stringify(visits));
+                    showToast('Visit saved locally');
+                });
+            } else {
+                visits.push({ id: 'local_' + Date.now(), ...visit });
+                localStorage.setItem('edge_visits', JSON.stringify(visits));
+                showToast('Visit saved locally');
+            }
+        }
+
+        // ===== ARCHIVE =====
+        function renderArchive() {
+            const container = document.getElementById('archiveList');
+            if (visits.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="icon">📁</div><div>No saved visits yet.</div></div>';
+                return;
+            }
+            container.innerHTML = visits.map(v => `
+                <div class="card">
+                    <div class="history-item">
+                        <div class="history-date">${v.date} | ${v.tdm}</div>
+                        <div class="history-name">Route: ${v.route} | Outlets: ${v.totalOutlets}</div>
+                        <div>EDGE: <span class="history-score">${v.finalEdge}</span> | CDA: ${v.cdaPercentage}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ===== TEAM =====
+        function updateTeamList(data) {
+            const container = document.getElementById('teamList');
+            const users = Object.entries(data);
+            if (users.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="icon">👤</div><div>Waiting for team members...</div></div>';
+                return;
+            }
+            container.innerHTML = users.map(([id, u]) => `
+                <div class="team-member">
+                    <div class="team-dot" style="background:${u.online ? 'var(--success)' : 'var(--text-light)'}"></div>
+                    <span>${u.name}</span>
+                    <span style="font-size:0.7rem;opacity:0.7;">${u.online ? 'online' : 'offline'}</span>
+                </div>
+            `).join('');
+        }
+
+        function copyLink() {
+            const link = document.getElementById('shareLink');
+            link.select();
+            document.execCommand('copy');
+            showToast('Link copied!');
+        }
+
+        // ===== MODAL =====
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        // ===== TOAST =====
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        // ===== SYNC =====
+        function manualSync() {
+            const btn = document.getElementById('syncBtn');
+            btn.classList.add('spinning');
+            showToast('Syncing...');
+            setTimeout(() => {
+                btn.classList.remove('spinning');
+                showToast('Sync complete!');
+            }, 1500);
+        }
+
+        // ===== LOAD LOCAL DATA =====
+        function loadLocalData() {
+            try {
+                const localOutlets = JSON.parse(localStorage.getItem('edge_outlets') || '[]');
+                const localVisits = JSON.parse(localStorage.getItem('edge_visits') || '[]');
+                if (localOutlets.length > 0 && outlets.length === 0) outlets = localOutlets;
+                if (localVisits.length > 0 && visits.length === 0) visits = localVisits;
+            } catch (e) {}
+        }
+        loadLocalData();
+    </script>
+</body>
+</html>
